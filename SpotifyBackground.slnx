@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="potifyBackground/potifyBackground.vcxproj" Id="4614ef59-2622-4e44-87f9-1709f4c0a1b4" />
+</Solution>
