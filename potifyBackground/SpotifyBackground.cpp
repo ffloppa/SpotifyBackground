@@ -254,11 +254,11 @@ int main()
 
         if (!tooLoud) {
             if (foundBackgroundNoise) {
-                FadeToVolume(config.volumeToDecrease, 0.1f, 0, L"Spotify.exe", Spotify, count);
+                FadeToVolume(config.volumeToDecrease, 0.01f, 100, L"Spotify.exe", Spotify, count);
                 printf("something good may happen\n");
             }
             else {
-                FadeToVolume(config.volumeToIncrease, 0.1f, 0, L"Spotify.exe", Spotify, count);
+                FadeToVolume(config.volumeToIncrease, 0.01f, 100, L"Spotify.exe", Spotify, count);
                 printf("back in depression\n");
             }
         }
