@@ -12,6 +12,8 @@
 #include <wrl/client.h>
 #include <fstream>
 #include <string>
+#include <random>
+#include <chrono>
 
 struct StreamingServiceConfig {
     std::string exe{ "Spotify.exe" };
@@ -98,6 +100,7 @@ void SetVolume(float volumePercent, const wchar_t* nameproccess, int enumeration
     if (SUCCEEDED(ctrl[enumeration].As(&volume[enumeration]))) {
         if (volume[enumeration]) {
             volume[enumeration]->SetMasterVolume(volumePercent, nullptr);
+            std::wcout << L"Volume set to " << int(volumePercent * 100.0f) << L"% for " << nameproccess << L"\n";
         }
     }
     else {
@@ -110,6 +113,7 @@ void FadeToVolume(float targetVolume, float step, int delayMs, const wchar_t* na
     if (targetVolume > 1.0f) targetVolume = 1.0f;
     if (step <= 0.0f) step = 0.01f;
 
+    // Ensure session control and volume interface available
     bool found = false;
     FindProccess(nameproccess, enumeration, countofsessions, found);
     if (!found) {
@@ -117,7 +121,7 @@ void FadeToVolume(float targetVolume, float step, int delayMs, const wchar_t* na
         return;
     }
 
-    if (!SUCCEEDED(ctrl[enumeration].As(&volume[enumeration])) || !volume[enumeration]) {
+    if (FAILED(ctrl[enumeration].As(&volume[enumeration])) || !volume[enumeration]) {
         std::wcout << L"Failed to get ISimpleAudioVolume for " << nameproccess << L"\n";
         return;
     }
@@ -125,7 +129,7 @@ void FadeToVolume(float targetVolume, float step, int delayMs, const wchar_t* na
     float current = 0.0f;
     if (FAILED(volume[enumeration]->GetMasterVolume(&current))) {
         volume[enumeration]->SetMasterVolume(targetVolume, nullptr);
-        std::wcout << L"Could not read current volume, set directly to " << int(targetVolume * 100) << L"%\n";
+        std::wcout << L"Could not read current volume, set directly to " << int(targetVolume * 100.0f) << L"%\n";
         return;
     }
 
@@ -136,12 +140,14 @@ void FadeToVolume(float targetVolume, float step, int delayMs, const wchar_t* na
     float direction = (targetVolume > current) ? 1.0f : -1.0f;
     float stepSigned = step * direction;
 
-    
+    std::wcout << L"Fading volume for " << nameproccess << L" from " << int(current * 100.0f) << L"% to " << int(targetVolume * 100.0f) << L"%\n";
+
     while (true) {
         float next = current + stepSigned;
 
         if ((direction > 0 && next >= targetVolume) || (direction < 0 && next <= targetVolume)) {
             volume[enumeration]->SetMasterVolume(targetVolume, nullptr);
+            std::wcout << L"Set final volume to " << int(targetVolume * 100.0f) << L"%\n";
             break;
         }
 
@@ -223,27 +229,44 @@ int main()
     ctrl.resize(appCount);
     meter.resize(appCount);
 
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_int_distribution<int> dist(1000, 2000);
+
     while (true) {
         if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
             break;
         }
 
+        int randDelay = dist(mt);
+        printf("%d random delay\n", randDelay);
         bool foundBackgroundNoise = false;
+        bool tooLoud = false;
         for (uint32_t i = 0; i < proccesses.size() - 1; ++i) {
             float peak;
             GetVolume(peak, i, proccesses[i], count);
-            if (peak > 0.0001f) foundBackgroundNoise = true;
+            if (peak > 0.0001f) {
+                foundBackgroundNoise = true;
+                if (peak > 0.2500f) tooLoud = true;
+                break;
+            }
         }
 
-        if (foundBackgroundNoise) {
-            FadeToVolume(config.volumeToDecrease, 0.1f, 5, L"Spotify.exe", Spotify, count);
-            printf("something good may happen\n");
+        if (!tooLoud) {
+            if (foundBackgroundNoise) {
+                FadeToVolume(config.volumeToDecrease, 0.1f, 0, L"Spotify.exe", Spotify, count);
+                printf("something good may happen\n");
+            }
+            else {
+                FadeToVolume(config.volumeToIncrease, 0.1f, 0, L"Spotify.exe", Spotify, count);
+                printf("back in depression\n");
+            }
         }
         else {
-            FadeToVolume(config.volumeToIncrease, 0.1f, 5, L"Spotify.exe", Spotify, count);
-            printf("back in depression\n");
+			printf("too loud \n");
+            FadeToVolume(0.1f, 0.1f, 50, L"Spotify.exe", Spotify, count);
         }
-        Sleep(1500);
+        Sleep(randDelay);
     }
 
     for (size_t i = 0; i < volume.size(); ++i) volume[i].Reset();
