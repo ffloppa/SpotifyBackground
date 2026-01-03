@@ -245,7 +245,7 @@ int main()
         for (uint32_t i = 0; i < proccesses.size() - 1; ++i) {
             float peak;
             GetVolume(peak, i, proccesses[i], count);
-            if (peak > 0.0001f) {
+            if (peak > 0.0010f) {
                 foundBackgroundNoise = true;
                 if (peak > 0.2500f) tooLoud = true;
                 break;
