@@ -14,9 +14,9 @@
 #include <string>
 
 struct StreamingServiceConfig {
-    std::string exe;   // Spotify.exe
-    float       volumeToIncrease = 0.65;   // 0.65
-    float       volumeToDecrease = 0.3;     // 0.3
+    std::string exe{ "Spotify.exe" };
+    float       volumeToIncrease = 0.65;
+    float       volumeToDecrease = 0.3;
 };
 
 enum AppNumerator {
@@ -98,7 +98,6 @@ void SetVolume(float volumePercent, const wchar_t* nameproccess, int enumeration
     if (SUCCEEDED(ctrl[enumeration].As(&volume[enumeration]))) {
         if (volume[enumeration]) {
             volume[enumeration]->SetMasterVolume(volumePercent, nullptr);
-            std::wcout << L"Volume set to " << int(volumePercent * 100) << L"% for " << nameproccess << L"\n";
         }
     }
     else {
@@ -131,21 +130,18 @@ void FadeToVolume(float targetVolume, float step, int delayMs, const wchar_t* na
     }
 
     if (fabsf(current - targetVolume) <= (step * 0.5f)) {
-        std::wcout << L"Volume already near target (" << int(current * 100) << L"%), no fade needed.\n";
         return;
     }
 
     float direction = (targetVolume > current) ? 1.0f : -1.0f;
     float stepSigned = step * direction;
 
-    std::wcout << L"Fading volume for " << nameproccess << L" from " << int(current * 100) << L"% to " << int(targetVolume * 100) << L"%\n";
-
+    
     while (true) {
         float next = current + stepSigned;
 
         if ((direction > 0 && next >= targetVolume) || (direction < 0 && next <= targetVolume)) {
             volume[enumeration]->SetMasterVolume(targetVolume, nullptr);
-            std::wcout << L"Set final volume to " << int(targetVolume * 100) << L"%\n";
             break;
         }
 
@@ -176,9 +172,6 @@ void GetVolume(float& volumePercent, int enumeration, const wchar_t* nameprocces
         } else {
             std::wprintf(L"Failed to get IAudioMeterInformation for %ls\n", nameproccess);
         }
-    }
-    else {
-        std::wprintf(L"%ls process not found.\n", nameproccess);
     }
 }
 
